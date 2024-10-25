@@ -1,0 +1,56 @@
+import time
+import requests
+import dweepy
+import threading
+import RPi.GPIO as GPIO
+
+# led
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(19, GPIO.OUT)
+
+myThing = "jade_raspi"  
+
+def control_led(state):
+    if state:
+        print("LED on")
+        GPIO.output(19, GPIO.HIGH) 
+    else:
+        print("LED off")
+        GPIO.output(19, GPIO.LOW)
+
+# temperature updates
+def temp_listener():
+    while True:
+        try:
+            dweet = dweepy.get_latest_dweet_for(myThing)[0]
+            temperature = float(dweet['content']['temperature'])
+            print(f"current temp: {temperature}")
+
+            # Turn on LED if temp > 25°C
+            if temperature > 25:
+                control_led(True)
+            else:
+                control_led(False)
+        except Exception as e:
+            print("error")
+        time.sleep(5)
+
+def simulate_dweets():
+    temp = 22.0  # temp
+    hum = 50  # hum
+    n = 15  # Counter for simulation
+
+    while n > 0:
+        print(f"Sending dweet - Temp: {temp}°C, Humidity: {hum}%")
+
+        dweepy.dweet_for(myThing, {"temperature": str(temp), "humidity": str(hum)})
+        temp += 1.5 
+        hum += 5
+        n -= 1
+        time.sleep(5)
+
+listener_thread = threading.Thread(target=temp_listener)
+listener_thread.daemon = True
+listener_thread.start()
+simulate_dweets()
