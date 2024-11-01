@@ -1,0 +1,51 @@
+import time
+import dweepy
+import RPi.GPIO as GPIO
+
+# LED setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(19, GPIO.OUT)
+
+myThing = "jade_raspi"  
+key1 = "temperature"
+key2 = "humidity"
+n = 15 # how many times loop will run 
+temp = 22.0  
+hum = 50  
+
+def control_led(state):
+    if state:
+        print("LED on")
+        GPIO.output(19, GPIO.HIGH) 
+    else:
+        print("LED off")
+        GPIO.output(19, GPIO.LOW)
+
+while n > 0:
+    print(f"Temp: {temp}, Humidity: {hum}%")
+    # sends current temp and hum to the dweet.io
+    dweepy.dweet_for(myThing, {key1: str(temp), key2: str(hum)})
+
+    try:
+        dweet = dweepy.get_latest_dweet_for(myThing)[0] # retrives most recent dweet 
+        temperature = float(dweet['content'][key1])  # gets data and convert to deciml number 
+        print(f"current temperature: {temperature}")
+
+        # on LED if temp higher than 25
+        if temperature > 25:
+            control_led(True)
+        else:
+            control_led(False)
+    except Exception as e:
+        print("Error")
+
+    time.sleep(5)
+
+    temp += 1.5 
+    hum += 5
+    n -= 1
+
+GPIO.cleanup()
+
+
